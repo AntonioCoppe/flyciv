@@ -1,0 +1,24 @@
+name: Engine
+description: LIF/rate step, toy graph, FLYB/npz loader, hero brain.
+title: "[engine] "
+labels: ["engine"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Frozen W, Shiu constants, spikes, loader, toy graph identity.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Repro
+      description: Prefer `flyciv smoke` or a pytest name. No MaleCNS required.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: This is not a request to replace the graph with an MLP.
+        - label: This is not a request to backprop through W.

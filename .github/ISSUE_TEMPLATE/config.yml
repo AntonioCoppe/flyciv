@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Honesty / biological vs scripted
+    url: https://github.com/AntonioCoppe/flyciv/blob/main/docs/HONESTY.md
+    about: Read the table before filing an honesty-regression issue.

@@ -1,0 +1,49 @@
+cff-version: 1.2.0
+title: flyciv
+message: >
+  If you use this software, please cite flyciv and the MaleCNS dataset
+  (Berg et al., Cell 2026). If you use the LIF constants, also cite
+  Shiu et al., Nature 2024.
+type: software
+authors:
+  - name: "flyciv contributors"
+license: MIT
+repository-code: "https://github.com/AntonioCoppe/flyciv"
+keywords:
+  - Drosophila
+  - connectome
+  - MaleCNS
+  - colony
+  - stigmergy
+preferred-citation:
+  type: article
+  title: "Sexual dimorphism in the complete Drosophila male central nervous system connectome"
+  authors:
+    - family-names: Berg
+      given-names: Stuart
+    - family-names: Beckett
+      given-names: Isabella R.
+    - family-names: Costa
+      given-names: Marta
+    - name: "et al."
+  journal: Cell
+  year: 2026
+  volume: "189"
+  issue: "18"
+  start: 5504
+  end: 5526
+  doi: 10.1016/j.cell.2026.08.015
+  url: "https://www.cell.com/cell/fulltext/S0092-8674(26)00942-6"
+references:
+  - type: article
+    title: "A Drosophila computational brain model reveals sensorimotor processing"
+    authors:
+      - family-names: Shiu
+        given-names: Philip K.
+      - name: "et al."
+    journal: Nature
+    year: 2024
+    volume: "634"
+    start: 210
+    end: 219
+    doi: 10.1038/s41586-024-07763-9

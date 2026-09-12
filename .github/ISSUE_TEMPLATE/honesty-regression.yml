@@ -1,0 +1,22 @@
+name: Honesty regression
+description: Biological vs scripted mislabel, AGI/consciousness claim, silent scripting.
+title: "[honesty] "
+labels: ["honesty-regression"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this if something is labeled biological that is scripted, or the reverse.
+        Also for README/docs claims that this is a living fly, AGI, or conscious.
+  - type: textarea
+    id: what
+    attributes:
+      label: What was mislabeled or overclaimed
+    validations:
+      required: true
+  - type: textarea
+    id: should
+    attributes:
+      label: What HONESTY.md should say
+    validations:
+      required: true

@@ -1,0 +1,23 @@
+name: World
+description: Grid, food, brood, wear, trail, road, block, trainer tile, colony CLI.
+title: "[world] "
+labels: ["world"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: input
+    id: seed
+    attributes:
+      label: Seed / command
+      placeholder: flyciv run --heroes 4 --crowd 64 --generations 20 --seed 7
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I understand wear/trails/roads/trainer are designed rules (see HONESTY.md).
+        - label: I am not asking to pass a scripted city off as emergence.

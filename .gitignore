@@ -1,0 +1,34 @@
+# Connectome blobs — never commit
+data/raw/
+data/derived/
+*.flyb
+*.npy
+
+# Checkpoints, secrets, local runs
+checkpoints/
+.env
+.env.*
+runs/
+lineages/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+*.swp

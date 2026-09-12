@@ -1,0 +1,29 @@
+name: Data pipeline
+description: Fetch, SHA256, compact graph, neuPrint/GCS, provenance.
+title: "[data] "
+labels: ["data-pipeline"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do **not** attach EM volumes, full synapse tables, or meshes.
+        Default dataset is `male-cns:v1.0` (CC BY 4.0).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Fetch command, dataset id, hash mismatch, Cypher/GCS error.
+    validations:
+      required: true
+  - type: textarea
+    id: hashes
+    attributes:
+      label: SHA256 (if any)
+      description: Expected vs actual. Never paste secrets or neuPrint tokens.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I did not commit connectome blobs.
+        - label: This is MaleCNS (CC BY 4.0), not FlyWire female on the default path.

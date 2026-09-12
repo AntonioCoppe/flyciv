@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flyciv"
+version = "0.1.0"
+description = "Colony sim on the MaleCNS fruit-fly connectome. Frozen brains, evolving adapters, wear-roads, trainer tile."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "flyciv contributors" }]
+keywords = ["drosophila", "connectome", "malecns", "colony", "lif"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4",
+]
+fetch = [
+  "requests>=2.31",
+]
+
+[project.scripts]
+flyciv = "flyciv.cli:_entry"
+
+[project.urls]
+Homepage = "https://github.com/AntonioCoppe/flyciv"
+Documentation = "https://github.com/AntonioCoppe/flyciv#readme"
+Issues = "https://github.com/AntonioCoppe/flyciv/issues"
+
+[tool.setuptools.packages.find]
+where = ["packages"]
+include = ["flyciv*"]
+
+[tool.setuptools.package-data]
+flyciv = ["brain/fixtures/*", "data/fixtures/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
