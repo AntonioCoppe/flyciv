@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "flyciv",
+  "version": "${version}",
+  "name": "flyciv",
+  "description": "A colony of fruit-fly bodies wear gold roads into a city, then unlock a trainer tile. Frozen connectome; only adapters evolve. Showcase walk is labeled.",
+  "authors": ["flyciv contributors"],
+  "license": "MIT",
+  "icon": "assets/flyciv/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["ai.flyciv.mc.FlycivMod"]
+  },
+  "mixins": ["flyciv.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.1",
+    "java": ">=21"
+  }
+}

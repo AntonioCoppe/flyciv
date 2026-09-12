@@ -63,6 +63,9 @@ flyciv run --heroes 4 --crowd 64 --generations 20 --seed 7
 flyciv report runs/latest    # trails, calories, whether trainer unlocked
 flyciv watch                 # 3D fruit flies on the colony (default)
 flyciv watch --lab           # 2D dashboard
+
+Minecraft (people can actually join): see `apps/minecraft/README.md`.
+Drop `apps/minecraft/dist/flyciv-mc-0.1.0.jar` into Fabric 1.21.1 + Fabric API, then `/flyciv start`.
 flyciv watch --honest        # science run, same Watch skin
 flyciv watch --lab           # cream Lab dashboard
 flyciv cinema                # 13s 16:9 + 9:16 clip from the last Watch run
