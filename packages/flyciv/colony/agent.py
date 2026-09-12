@@ -274,7 +274,10 @@ def step_agent(agent: Agent, world: World, others: list[Agent]) -> str:
     }
     action = decide(agent, sensors)
     body_program(agent, action, sensors, world, others)
-    world.occupy(agent.y, agent.x)
+    if world.showcase and agent.kind is Kind.CROWD:
+        world.occupy(agent.y, agent.x, amount=0.25)
+    else:
+        world.occupy(agent.y, agent.x)
     return interact(agent, world)
 
 

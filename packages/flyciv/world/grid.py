@@ -40,8 +40,8 @@ class World:
     showcase: bool = False
     wear_step: float = 1.0
 
-    def occupy(self, y: int, x: int) -> None:
-        self.wear[y, x] += self.wear_step
+    def occupy(self, y: int, x: int, amount: float | None = None) -> None:
+        self.wear[y, x] += self.wear_step if amount is None else amount
 
     def in_bounds(self, y: int, x: int) -> bool:
         return 0 <= y < self.size and 0 <= x < self.size

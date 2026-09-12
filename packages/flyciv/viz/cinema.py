@@ -128,13 +128,15 @@ def _draw_brain(draw, box, soma: np.ndarray, glow: np.ndarray, yaw: float, pitch
         y1p = y * cp - z1 * sp
         px, py = cx + x1p * sc, cyi + y1p * sc
         g = float(glow[k]) if k < len(glow) else 0.0
-        if g > 0.08:
-            r = 2.2 + g * 2.8
-            draw.ellipse((px - r, py - r, px + r, py + r), fill=(80, 255, 220, int(180 + 75 * g)))
+        g2 = min(1.0, g + (0.35 if flash > 0.2 else 0.0))
+        if g2 > 0.08:
+            r = 2.2 + g2 * 2.8
+            draw.ellipse((px - r, py - r, px + r, py + r), fill=(80, 255, 220, int(180 + 75 * g2)))
         else:
             draw.rectangle((px, py, px + 1.6, py + 1.6), fill=(150, 160, 180, 140))
-    if flash > 0.05:
-        draw.rectangle(box, fill=(80, 255, 220, int(40 * flash)))
+    if flash > 0.15:
+        # tint spikes, never a solid slab over the cloud
+        pass
 
 
 def _draw_scope(draw, box, frame: dict, font) -> None:
