@@ -61,7 +61,8 @@ No MaleCNS download is required for tests or smoke.
 flyciv smoke                 # 20-neuron toy graph, no download
 flyciv run --heroes 4 --crowd 64 --generations 20 --seed 7
 flyciv report runs/latest    # trails, calories, whether trainer unlocked
-flyciv watch                 # Watch skin (default). Showcase run. Open hud.html
+flyciv watch                 # 3D fruit flies on the colony (default)
+flyciv watch --lab           # 2D dashboard
 flyciv watch --honest        # science run, same Watch skin
 flyciv watch --lab           # cream Lab dashboard
 flyciv cinema                # 13s 16:9 + 9:16 clip from the last Watch run

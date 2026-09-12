@@ -136,23 +136,26 @@ def cmd_watch(args: argparse.Namespace) -> int:
         collect_frames=True,
     )
     hud = out / "hud.html"
+    world3d = out / "world3d.html"
     q = []
     if args.lab:
         q.append("lab=1")
     if args.cinema:
         q.append("cinema=1")
-    url = hud.resolve().as_uri()
+    target = hud if (args.lab or args.cinema) else world3d
+    url = target.resolve().as_uri()
     if q:
-        url = url + "?" + "&".join(q)
+        url = hud.resolve().as_uri() + "?" + "&".join(q)
+        target = hud
     print(format_report(report), end="")
-    print(f"HUD: {hud.resolve()}  ({report.get('n_frames', 0)} frames)")
-    print("Watch skin is default. Lab: hud.html?lab=1  Cinema: hud.html?cinema=1")
-    print("Showcase overcranks wear and walks 4 heroes on axes (labeled). Use --honest for the science run.")
-    if hud.is_file() and not args.no_open:
+    print(f"3D flies: {world3d.resolve()}")
+    print(f"2D lab:   {hud.resolve()}  ({report.get('n_frames', 0)} frames)")
+    print("Default Watch is the 3D fly scene. --lab for the dashboard. --honest for the science run.")
+    if target.is_file() and not args.no_open:
         if q:
             webbrowser.open(url)
         else:
-            _open(hud)
+            _open(target)
     return 0
 
 

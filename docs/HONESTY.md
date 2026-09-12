@@ -28,7 +28,8 @@ doomfly’s public notes are the model: say what was demonstrated, and what was 
 | Surplus → trainer tile | **designed rule** | Not an LLM inside the fly. Inner eval + `write_child_adapter`. |
 | Selection / mutation | **designed evolution** | Fitness = nest calories + brood adults + trail stability + trainer success. |
 | Win-check | **designed metric** | City + roads + live trainer + K generations without collapse. |
-| Watch skin vs Lab skin | **designed viz** | Watch is the game-like default (dark, gold roads, fat heroes). Lab is the cream dashboard. |
+| 3D fly bodies (`world3d.html`) | **designed viz** | Three.js fruit-fly meshes (eyes, wings, striped abdomen, legs). Not NeuroMechFly physics and not Minecraft. Crowd is instanced copies of the same mesh. |
+| Watch skin vs Lab skin | **designed viz** | Watch default is the 3D fly scene. `spectator.html` is the 2D dashboard. |
 | Showcase run (`flyciv watch`) | **scripted choreography** | 4 heroes walk the cardinal axes; wear is overcranked; trainer unlock is forced at generation 3 if surplus is short. Labeled showcase vs `--honest`. Not emergence. |
 | Spectator world camera | **designed viz** | Isometric grid of the colony. Not Minecraft. |
 | Spectator brain view (soma cloud) | **data + scripted mapping** | Point cloud is a MaleCNS `somaLocation` subsample (CC BY 4.0). Spikes come from the **20-neuron toy LIF**, mapped onto 20 stand-in somata plus a nearest-neighbor halo. This is not 176k cells firing. |

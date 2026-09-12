@@ -58,8 +58,12 @@ def test_watch_writes_hud(tmp_path: Path, capsys):
     assert 'id="world"' in html
     assert "neuroscope" in html
     assert "xyz_b64" in html
+    world = (out / "world3d.html").read_text(encoding="utf-8")
+    assert "three" in world.lower()
+    assert "makeFly" in world
+    assert "SphereGeometry" in world
     printed = capsys.readouterr().out
-    assert "HUD:" in printed
+    assert "3D flies" in printed
     assert "frames" in printed
 
 

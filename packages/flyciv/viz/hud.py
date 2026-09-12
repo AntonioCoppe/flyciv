@@ -19,4 +19,7 @@ def write_hud(path: Path, frames: list[dict[str, Any]], meta: dict[str, Any] | N
     html = tmpl.replace("__FRAMES__", blob)
     path.write_text(html, encoding="utf-8")
     path.with_name("watch.json").write_text(blob, encoding="utf-8")
+    world_tmpl = files("flyciv.viz.fixtures").joinpath("world3d.html")
+    world_html = world_tmpl.read_text(encoding="utf-8").replace("__FRAMES__", blob)
+    path.with_name("world3d.html").write_text(world_html, encoding="utf-8")
     return path
