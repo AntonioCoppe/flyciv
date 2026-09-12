@@ -186,64 +186,58 @@ function drawWorld(f) {
   wctx.fillStyle = watch ? '#070b14' : '#e9e1cd';
   wctx.fillRect(0,0,W,H);
   const n=f.res, wear=decU8(f.wear_b64), mask=decU8(f.mask_b64);
-  const box=contentBox(f);
-  const bw=box.x1-box.x0+1, bh=box.y1-box.y0+1;
-  let s = Math.min(W/(bw+bh), H/((bw+bh)*0.52)) * 0.95;
+  const nestX=f.nest[1], nestY=f.nest[0];
+  let s = watch ? Math.min(W,H)/18 : Math.min(W,H)/28;
   s *= camZoom;
-  const ox=W/2, oy=H*0.16;
-  const iso=(x,y)=>{
-    const X=(x-box.x0)-(bw/2), Y=(y-box.y0)-(bh/2);
-    return [ox+(X-Y)*s, oy+(bw+bh)*s*0.22 + (X+Y)*s*0.52];
-  };
-  for (let y=box.y0;y<=box.y1;y++) for (let x=box.x0;x<=box.x1;x++) {
-    const p=y*n+x, m=mask[p]||0, wv=wear[p]||0;
-    const [px,py]=iso(x,y);
-    let col = watch ? '#0c1220' : '#f4ecda';
-    if (wv) {
-      const t=wv/255;
-      col = watch
-        ? `rgb(${20+t*180},${16+t*90},${8+t*20})`
-        : `rgb(${220-t*90},${200-t*110},${160-t*90})`;
+  const ox=W/2, oy=H*0.48;
+  const iso=(x,y)=>[ox+(x-nestX-(y-nestY))*s, oy+((x-nestX)+(y-nestY))*s*0.5];
+  if (!watch) {
+    const box=contentBox(f);
+    for (let y=box.y0;y<=box.y1;y++) for (let x=box.x0;x<=box.x1;x++) {
+      const p=y*n+x, m=mask[p]||0, wv=wear[p]||0;
+      const [px,py]=iso(x,y);
+      let col='#f4ecda';
+      if (wv) { const t=wv/255; col=`rgb(${220-t*90},${200-t*110},${160-t*90})`; }
+      if (m&2) col='#b08948';
+      if (m&1) col='#6a5433';
+      wctx.fillStyle=col;
+      wctx.beginPath();
+      wctx.moveTo(px, py); wctx.lineTo(px+s, py+s*0.52); wctx.lineTo(px, py+s*1.04); wctx.lineTo(px-s, py+s*0.52);
+      wctx.closePath(); wctx.fill();
     }
-    if (m&2) col = watch ? '#c4922a' : '#b08948';
-    if (m&1) col = watch ? '#ffd36a' : '#6a5433';
-    wctx.fillStyle=col;
-    const thick = m&1 ? 1.15 : (wv>40 ? 1.08 : 1);
-    wctx.beginPath();
-    wctx.moveTo(px, py);
-    wctx.lineTo(px+s*thick, py+s*0.52*thick);
-    wctx.lineTo(px, py+s*1.04*thick);
-    wctx.lineTo(px-s*thick, py+s*0.52*thick);
-    wctx.closePath();
-    wctx.fill();
-    if (m&4) {
-      wctx.fillStyle = watch ? '#3dff6a' : '#2e7d3a';
-      wctx.beginPath(); wctx.arc(px, py+s*0.45, Math.max(3, s*0.22),0,7); wctx.fill();
+  } else {
+    for (let y=0;y<n;y++) for (let x=0;x<n;x++) {
+      const p=y*n+x, m=mask[p]||0, wv=wear[p]||0;
+      if (wv<8 && !(m&7)) continue;
+      const [px,py]=iso(x,y);
+      if (m&1) { wctx.fillStyle='rgba(255,211,80,0.9)'; wctx.beginPath(); wctx.ellipse(px,py, 8+wv/20, 5+wv/30, 0,0,7); wctx.fill(); }
+      else if (m&2) { wctx.fillStyle='rgba(210,150,40,0.65)'; wctx.beginPath(); wctx.ellipse(px,py, 6, 3.5, 0,0,7); wctx.fill(); }
+      else { wctx.fillStyle='rgba(180,110,30,0.28)'; wctx.beginPath(); wctx.ellipse(px,py, 4, 2.4, 0,0,7); wctx.fill(); }
+      if (m&4) { wctx.fillStyle='#3dff6a'; wctx.beginPath(); wctx.arc(px,py,7,0,7); wctx.fill(); }
     }
   }
   const [nx,ny]=iso(f.nest[1], f.nest[0]);
-  const glow = f.trainer ? (watch?18:10) : 8;
   if (watch) {
-    const g = wctx.createRadialGradient(nx, ny+6, 2, nx, ny+6, glow*2.2);
-    g.addColorStop(0, f.trainer ? 'rgba(61,139,255,.95)' : 'rgba(61,139,255,.45)');
+    const g = wctx.createRadialGradient(nx, ny, 4, nx, ny, f.trainer?70:40);
+    g.addColorStop(0, f.trainer ? 'rgba(80,170,255,.95)' : 'rgba(61,139,255,.55)');
     g.addColorStop(1, 'rgba(61,139,255,0)');
-    wctx.fillStyle=g;
-    wctx.beginPath(); wctx.arc(nx, ny+6, glow*2.2, 0, 7); wctx.fill();
+    wctx.fillStyle=g; wctx.beginPath(); wctx.arc(nx, ny, f.trainer?70:40, 0, 7); wctx.fill();
+    wctx.fillStyle = f.trainer?'#9ecbff':'#3d8bff';
+    wctx.beginPath(); wctx.arc(nx, ny, 16, 0, 7); wctx.fill();
+  } else {
+    wctx.fillStyle='#1f4f7a'; wctx.fillRect(nx-s*0.55, ny, s*1.1, s*0.75);
   }
-  wctx.fillStyle = watch ? (f.trainer?'#7eb6ff':'#3d8bff') : '#1f4f7a';
-  wctx.fillRect(nx-s*0.55, ny, s*1.1, s*0.75);
   for (const a of f.agents) {
     const [px,py]=iso(a.x,a.y);
     if (a.k==='c') {
-      wctx.fillStyle = watch ? '#6d7b93' : '#3d4a3a';
-      wctx.beginPath(); wctx.arc(px, py, watch?4.6:2.4, 0, 7); wctx.fill();
+      wctx.fillStyle = watch ? '#8a97ad' : '#3d4a3a';
+      wctx.beginPath(); wctx.arc(px, py, watch?7:2.4, 0, 7); wctx.fill();
     } else {
-      const child = a.k==='C';
       wctx.strokeStyle = watch ? '#ffd36a' : '#1d1a16';
-      wctx.lineWidth = child ? 3 : 2;
-      wctx.beginPath(); wctx.arc(px, py, watch?9.5:5, 0, 7); wctx.stroke();
+      wctx.lineWidth = a.k==='C' ? 4 : 3;
+      wctx.beginPath(); wctx.arc(px, py, watch?18:5, 0, 7); wctx.stroke();
       wctx.fillStyle = watch ? '#ff7a18' : '#c45c12';
-      wctx.beginPath(); wctx.arc(px, py, watch?7.2:4, 0, 7); wctx.fill();
+      wctx.beginPath(); wctx.arc(px, py, watch?14:4, 0, 7); wctx.fill();
     }
   }
 }
