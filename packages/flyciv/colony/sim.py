@@ -92,6 +92,8 @@ def run_colony(
     graph: ConnectomeGraph | None = None,
     out_dir: Path | None = None,
     smoke: bool = False,
+    on_frame=None,
+    collect_frames: bool = False,
 ) -> dict[str, Any]:
     rng = np.random.default_rng(seed)
     graph = graph or load_toy_graph()
@@ -150,6 +152,21 @@ def run_colony(
         emit("first_store", 0, 0)
         emit("trainer_unlocked", 0, 0)
 
+    frames: list[dict] = []
+
+    def push_frame(generation: int, step: int) -> None:
+        if not collect_frames and on_frame is None:
+            return
+        from flyciv.viz.frames import capture_frame
+
+        frame = capture_frame(world, agents, generation, step, events)
+        if collect_frames:
+            frames.append(frame)
+        if on_frame is not None:
+            on_frame(frame, world, agents)
+
+    push_frame(0, 0)
+
     for gen in range(1, n_generations + 1):
         gen_event_names: list[str] = []
         for a in agents:
@@ -176,6 +193,7 @@ def run_colony(
             if flags["first_road"]:
                 emit("first_road", gen, t)
                 gen_event_names.append("first_road")
+            push_frame(gen, t)
 
         occupied = {a.pos() for a in agents if a.alive}
         refresh_world_layers(world, occupied)
@@ -262,9 +280,10 @@ def run_colony(
         "events": [e.as_dict() for e in events],
         "history": history,
         "graph_note": "frozen W; only adapters evolve",
+        "n_frames": len(frames),
     }
     if out_dir is not None:
-        _write_run(Path(out_dir), report, lineage_log, agents, world)
+        _write_run(Path(out_dir), report, lineage_log, agents, world, frames=frames)
     return report
 
 
@@ -274,6 +293,7 @@ def _write_run(
     lineage_log: list[dict[str, Any]],
     agents: list[Agent],
     world: World,
+    frames: list[dict[str, Any]] | None = None,
 ) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
@@ -289,3 +309,7 @@ def _write_run(
     from flyciv.viz.ascii import render_ascii
 
     (out_dir / "map.txt").write_text(render_ascii(world, agents), encoding="utf-8")
+    if frames:
+        from flyciv.viz.hud import write_hud
+
+        write_hud(out_dir / "hud.html", frames, meta={"graph": report.get("graph"), "seed": report.get("seed")})

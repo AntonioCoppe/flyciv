@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import subprocess
 import sys
+import webbrowser
 from pathlib import Path
 
 from flyciv import __version__
@@ -80,12 +82,49 @@ def cmd_fetch(args: argparse.Namespace) -> int:
 
 def cmd_view(args: argparse.Namespace) -> int:
     run_dir = Path(args.run_dir)
+    hud = run_dir / "hud.html"
     map_path = run_dir / "map.txt"
+    if hud.is_file():
+        print(f"HUD: {hud.resolve()}")
+        if not args.no_open:
+            _open(hud)
     if map_path.is_file():
         print(map_path.read_text(encoding="utf-8"), end="")
+    elif (run_dir / "report.json").is_file():
+        print(format_report(load_report(run_dir)), end="")
     else:
-        data = load_report(run_dir)
-        print(format_report(data), end="")
+        print(f"no run at {run_dir}; try: flyciv watch", file=sys.stderr)
+        return 1
+    return 0
+
+
+def _open(path: Path) -> None:
+    uri = path.resolve().as_uri()
+    try:
+        webbrowser.open(uri)
+    except Exception:
+        subprocess.run(["open", str(path)], check=False)
+
+
+def cmd_watch(args: argparse.Namespace) -> int:
+    out = Path(args.out) if args.out else Path("runs") / "watch"
+    report = run_colony(
+        seed=int(args.seed),
+        n_heroes=int(args.heroes),
+        n_crowd=int(args.crowd),
+        n_generations=int(args.generations),
+        steps_per_gen=int(args.steps),
+        world_size=int(args.size),
+        construct_win=not bool(args.plain),
+        out_dir=out,
+        collect_frames=True,
+    )
+    hud = out / "hud.html"
+    print(format_report(report), end="")
+    print(f"HUD: {hud.resolve()}  ({report.get('n_frames', 0)} frames)")
+    print("Play/pause in the browser. Roads and trainer are designed rules.")
+    if hud.is_file() and not args.no_open:
+        _open(hud)
     return 0
 
 
@@ -127,9 +166,22 @@ def build_parser() -> argparse.ArgumentParser:
     f.add_argument("--try-network", action="store_true")
     f.set_defaults(func=cmd_fetch)
 
-    v = sub.add_parser("view", help="ASCII map of a run")
+    v = sub.add_parser("view", help="ASCII map of a run (opens HUD if present)")
     v.add_argument("run_dir", nargs="?", default="runs/latest")
+    v.add_argument("--no-open", action="store_true")
     v.set_defaults(func=cmd_view)
+
+    w = sub.add_parser("watch", help="run a colony and open a live-replay HUD in the browser")
+    w.add_argument("--heroes", type=int, default=4)
+    w.add_argument("--crowd", type=int, default=64)
+    w.add_argument("--generations", type=int, default=2)
+    w.add_argument("--seed", type=int, default=7)
+    w.add_argument("--steps", type=int, default=48)
+    w.add_argument("--size", type=int, default=128)
+    w.add_argument("--out", type=str, default="")
+    w.add_argument("--plain", action="store_true", help="do not paint the constructed city (random mill)")
+    w.add_argument("--no-open", action="store_true")
+    w.set_defaults(func=cmd_watch)
 
     return p
 

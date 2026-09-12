@@ -61,6 +61,7 @@ No MaleCNS download is required for tests or smoke.
 flyciv smoke                 # 20-neuron toy graph, no download
 flyciv run --heroes 4 --crowd 64 --generations 20 --seed 7
 flyciv report runs/latest    # trails, calories, whether trainer unlocked
+flyciv watch                 # replay HUD in the browser (map + spikes + timeline)
 flyciv fetch --dataset male-cns:v1.0 --out data/derived/
 ```
 
