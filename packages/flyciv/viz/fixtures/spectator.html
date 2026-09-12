@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>flyciv spectator</title>
+<style>
+  :root {
+    --bg:#070806; --panel:#10110e; --ink:#d7d2c3; --dim:#6e6a5c;
+    --line:#24261f; --hero:#f2e38a; --crowd:#8a7d62; --spike:#b7f27a;
+    --road:#cbb991; --food:#7dba6a;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--ink);
+    font:12px/1.35 "IBM Plex Mono", ui-monospace, Menlo, monospace; }
+  header { display:flex; justify-content:space-between; gap:16px; padding:8px 12px;
+    border-bottom:1px solid var(--line); background:#0b0c0a; }
+  header strong { letter-spacing:.18em; font-size:12px; }
+  .honest { color:var(--dim); max-width:70ch; font-size:11px; }
+  kbd { border:1px solid var(--line); padding:0 4px; color:var(--hero); }
+  main { display:grid; grid-template-columns: 1.15fr 1.05fr 280px; grid-template-rows: 1fr 108px;
+    height:calc(100% - 86px); }
+  .pane { position:relative; overflow:hidden; border-right:1px solid var(--line); background:var(--panel); }
+  .pane h2 { position:absolute; top:8px; left:10px; z-index:2; margin:0;
+    font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--dim); }
+  #world,#brain,#scope { width:100%; height:100%; display:block; }
+  #neuroscope { border-right:0; padding:28px 10px 8px; }
+  #timeline { grid-column:1/-1; border-top:1px solid var(--line); padding:8px 12px; background:#0b0c0a; }
+  .row { display:flex; gap:10px; align-items:center; }
+  button { background:#17180f; color:var(--ink); border:1px solid #33362c; padding:5px 9px; cursor:pointer; }
+  button:hover { border-color:var(--hero); }
+  #stats span { margin-right:12px; color:var(--dim); }
+  #stats b { color:var(--ink); font-weight:500; }
+  #eventlog { color:var(--dim); margin-top:4px; min-height:1.2em; }
+  .bar { height:7px; background:#1c1e16; margin:2px 0 6px; }
+  .bar > i { display:block; height:100%; background:var(--spike); width:0; }
+  .eye { display:grid; grid-template-columns:1fr 1fr; gap:3px; width:72px; }
+  .eye div { height:22px; background:#1a1c14; }
+  .hint { color:var(--dim); font-size:10px; margin-top:8px; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <strong>FLYCIV SPECTATOR</strong>
+    <div class="honest">Not a living fly. Frozen connectome; only adapters evolve.
+      Brain view is MaleCNS soma locations (CC BY 4.0) with toy-LIF spikes mapped onto 20 stand-in cells + a scripted halo.
+      Roads/trainer are designed rules. <kbd>W</kbd> world <kbd>B</kbd> brain <kbd>H</kbd> scope · drag brain to orbit</div>
+  </div>
+  <div id="stats"></div>
+</header>
+<main>
+  <div class="pane" id="p-world"><h2>W world</h2><canvas id="world"></canvas></div>
+  <div class="pane" id="p-brain"><h2>B brain · somata</h2><canvas id="brain"></canvas></div>
+  <aside class="pane" id="neuroscope">
+    <h2>H neuroscope</h2>
+    <canvas id="scope" width="260" height="220"></canvas>
+    <div id="rates"></div>
+    <div class="hint">eye (food N/E/S/W)</div>
+    <div class="eye" id="eye"><div></div><div></div><div></div><div></div></div>
+    <div class="hint" id="eye-meta"></div>
+  </aside>
+  <section id="timeline">
+    <div class="row">
+      <button id="play">pause</button>
+      <input id="scrub" type="range" min="0" max="0" value="0" style="flex:1"/>
+      <label>speed <input id="speed" type="range" min="1" max="14" value="5"/></label>
+    </div>
+    <div id="eventlog"></div>
+  </section>
+</main>
+<script>
+const DATA = __FRAMES__;
+const frames = DATA.frames || [];
+const cloud = (DATA.meta && DATA.meta.cloud) || null;
+const world = document.getElementById('world');
+const brain = document.getElementById('brain');
+const scope = document.getElementById('scope');
+const wctx = world.getContext('2d');
+const bctx = brain.getContext('2d');
+const sctx = scope.getContext('2d');
+const scrub = document.getElementById('scrub');
+const playBtn = document.getElementById('play');
+const speed = document.getElementById('speed');
+let i = 0, playing = true, acc = 0, last = performance.now();
+let spikeHist = [];
+let yaw = 0.85, pitch = 0.55, dragging = false, lx=0, ly=0;
+scrub.max = Math.max(0, frames.length - 1);
+
+function decU8(b64) {
+  const bin = atob(b64);
+  const a = new Uint8Array(bin.length);
+  for (let k=0;k<bin.length;k++) a[k] = bin.charCodeAt(k);
+  return a;
+}
+function decF32(b64) {
+  const u8 = decU8(b64);
+  return new Float32Array(u8.buffer);
+}
+
+const soma = cloud ? decF32(cloud.xyz_b64) : new Float32Array();
+const somaN = cloud ? cloud.n : 0;
+const somaSC = cloud ? decU8(cloud.sc_b64) : new Uint8Array();
+const SC_COL = [
+  [180,176,160], [70,110,120], [140,110,70], [90,150,90],
+  [230,200,90], [90,140,200], [230,140,70], [200,120,90],
+  [80,160,140], [120,200,160], [160,90,70], [180,160,200], [100,100,90]
+];
+
+function fit(c) {
+  const dpr = window.devicePixelRatio || 1;
+  c.width = c.clientWidth * dpr;
+  c.height = c.clientHeight * dpr;
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+function resize() { fit(world); fit(brain); }
+window.addEventListener('resize', () => { resize(); draw(frames[i]); });
+resize();
+
+brain.addEventListener('pointerdown', e => { dragging = true; lx=e.clientX; ly=e.clientY; brain.setPointerCapture(e.pointerId); });
+brain.addEventListener('pointerup', () => dragging=false);
+brain.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  yaw += (e.clientX-lx)*0.008;
+  pitch = Math.max(-1.1, Math.min(1.1, pitch + (e.clientY-ly)*0.008));
+  lx=e.clientX; ly=e.clientY;
+  draw(frames[i]);
+});
+document.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k==='w') focus('p-world');
+  if (k==='b') focus('p-brain');
+  if (k==='h') focus('p-neuroscope');
+  if (k===' ') { e.preventDefault(); toggle(); }
+});
+function focus(id) {
+  document.querySelectorAll('.pane').forEach(p => p.style.outline = '');
+  const el = document.getElementById(id) || document.getElementById('neuroscope');
+  el.style.outline = '1px solid #f2e38a';
+}
+
+function drawWorld(f) {
+  const W = world.clientWidth, H = world.clientHeight;
+  wctx.fillStyle = '#0d0e0b';
+  wctx.fillRect(0,0,W,H);
+  const n = f.res, wear = decU8(f.wear_b64), mask = decU8(f.mask_b64);
+  const s = Math.min(W, H) / (n * 1.35);
+  const ox = W/2, oy = H*0.16;
+  function iso(x,y){ return [ox + (x-y)*s, oy + (x+y)*s*0.52]; }
+  for (let y=0;y<n;y++) for (let x=0;x<n;x++) {
+    const p = y*n+x, m = mask[p]||0, wv = wear[p]||0;
+    const [px,py] = iso(x,y);
+    let col = '#15160f';
+    if (wv) { const t=wv/255; col = `rgb(${28+t*140},${24+t*70},${12})`; }
+    if (m&2) col = '#7a5a28';
+    if (m&1) col = '#cbb991';
+    wctx.fillStyle = col;
+    wctx.beginPath();
+    wctx.moveTo(px, py);
+    wctx.lineTo(px+s, py+s*0.52);
+    wctx.lineTo(px, py+s*1.04);
+    wctx.lineTo(px-s, py+s*0.52);
+    wctx.closePath();
+    wctx.fill();
+    if (m&4) { wctx.fillStyle='#7dba6a'; wctx.fillRect(px-2, py+s*0.3, 4, 4); }
+    if (m&8) { wctx.fillStyle='#6d8cae'; wctx.fillRect(px-1, py+s*0.2, 3, 3); }
+    if (m&16) { wctx.fillStyle='#e4d07a'; wctx.fillRect(px-3, py+s*0.15, 6, 2); }
+  }
+  const [nx,ny] = iso(f.nest[1], f.nest[0]);
+  wctx.strokeStyle = '#d7d2c3';
+  wctx.strokeRect(nx-s*0.4, ny, s*0.8, s*0.6);
+  for (const a of f.agents) {
+    const [px,py] = iso(a.x, a.y);
+    wctx.fillStyle = 'rgba(0,0,0,.35)';
+    wctx.beginPath(); wctx.ellipse(px, py+4, 3, 1.4, 0, 0, 7); wctx.fill();
+    wctx.fillStyle = a.k==='H' ? '#f2e38a' : '#8a7d62';
+    wctx.beginPath(); wctx.arc(px, py, a.k==='H'?3.2:2.1, 0, 7); wctx.fill();
+  }
+}
+
+function drawBrain(f) {
+  const W = brain.clientWidth, H = brain.clientHeight;
+  bctx.fillStyle = '#080907';
+  bctx.fillRect(0,0,W,H);
+  if (!somaN) return;
+  const cy=Math.cos(yaw), sy=Math.sin(yaw), cp=Math.cos(pitch), sp=Math.sin(pitch);
+  const sc = Math.min(W,H)*0.46;
+  const pts = new Array(somaN);
+  for (let k=0;k<somaN;k++) {
+    const x=soma[k*3], y=soma[k*3+1], z=soma[k*3+2];
+    const x1=x*cy-z*sy, z1=x*sy+z*cy;
+    const y1=y*cp-z1*sp, z2=y*sp+z1*cp;
+    pts[k] = [W/2+x1*sc, H/2+y1*sc, z2, k];
+  }
+  const glow = new Float32Array(somaN);
+  const spikes = f.spikes || [];
+  if (cloud) {
+    for (let t=0;t<spikes.length;t++) if (spikes[t]) {
+      const hi = cloud.halo[t] || [];
+      for (const h of hi) glow[h] = Math.max(glow[h], 0.55);
+      const ti = cloud.toy_idx[t];
+      if (ti>=0) glow[ti] = 1;
+    }
+  }
+  pts.sort((a,b)=>a[2]-b[2]);
+  for (const p of pts) {
+    const g = glow[p[3]];
+    const c = SC_COL[somaSC[p[3]]%SC_COL.length];
+    const a = g>0 ? 0.95 : 0.22;
+    const r = g>0.8 ? 2.4 : g>0 ? 1.6 : 0.7;
+    bctx.fillStyle = g>0 ? `rgba(183,242,122,${a})` : `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+    bctx.fillRect(p[0], p[1], r, r);
+  }
+}
+
+function drawScope(f) {
+  const w = scope.width, h = scope.height;
+  sctx.fillStyle = '#10110e';
+  sctx.fillRect(0,0,w,h);
+  const n = (f.spikes||[]).length || 20;
+  spikeHist.push(f.spikes||[]);
+  if (spikeHist.length>90) spikeHist.shift();
+  const cw=w/90, ch=h/n;
+  for (let t=0;t<spikeHist.length;t++) {
+    const col=spikeHist[t];
+    for (let k=0;k<n;k++) if (col[k]) {
+      sctx.fillStyle='#b7f27a';
+      sctx.fillRect(t*cw, k*ch, Math.max(1,cw-0.3), Math.max(1,ch-0.5));
+    }
+  }
+  const want = ['sugar_sensor','dn_walk','dn_linger','mn_forward','ppl1_reward'];
+  const names = f.names||[];
+  const rates = f.rates||[];
+  const maxr = Math.max(0.001, ...rates);
+  const host = document.getElementById('rates');
+  host.innerHTML = want.map(name => {
+    const idx = names.indexOf(name);
+    const v = idx>=0 ? (rates[idx]||0) : 0;
+    const pct = Math.min(100, 100*v/maxr);
+    return `<div>${name} <b>${v.toFixed(3)}</b><div class="bar"><i style="width:${pct}%"></i></div></div>`;
+  }).join('');
+  const food = (f.eye && f.eye.food) || [0,0,0,0,0];
+  const cells = document.querySelectorAll('#eye div');
+  const order = [0,1,3,2]; // N E W S as 2x2
+  cells.forEach((el,j) => {
+    const v = food[order[j]]||0;
+    const t = Math.min(1, v);
+    el.style.background = `rgb(${20+t*80},${30+t*160},${20})`;
+  });
+  const heading = (f.eye && f.eye.heading != null) ? f.eye.heading : '—';
+  document.getElementById('eye-meta').textContent =
+    `loom ${Number((f.eye&&f.eye.loom)||0).toFixed(2)}  wear ${Number((f.eye&&f.eye.wear)||0).toFixed(1)}  heading ${heading}`;
+}
+
+function draw(f) {
+  if (!f) return;
+  drawWorld(f);
+  drawBrain(f);
+  drawScope(f);
+  document.getElementById('stats').innerHTML =
+    `<span>g<b>${f.generation}</b>/${DATA.meta&&DATA.meta.generations||'?'} step <b>${f.step}</b></span>
+     <span>cal <b>${f.calories.toFixed(1)}</b></span>
+     <span>trainer <b>${f.trainer?'live':'off'}</b></span>
+     <span>somata <b>${somaN}</b></span>
+     <span>frame <b>${i+1}/${frames.length}</b></span>`;
+  const ev = (f.events||[]).map(e=>e.name+'@g'+e.generation).join(' · ') || '(no civilization events)';
+  document.getElementById('eventlog').textContent = ev;
+}
+
+function toggle(){ playing=!playing; playBtn.textContent = playing?'pause':'play'; }
+playBtn.onclick = toggle;
+scrub.oninput = () => { i=+scrub.value; spikeHist=[]; draw(frames[i]); };
+function tick(now) {
+  const dt=now-last; last=now;
+  if (!dragging) yaw += dt*0.00018;
+  if (playing && frames.length) {
+    acc += dt*(0.45 + +speed.value);
+    while (acc>=70) {
+      acc-=70; i=(i+1)%frames.length;
+      if (i===0) spikeHist=[];
+      scrub.value=i; draw(frames[i]);
+    }
+  } else if (!playing) {
+    draw(frames[i]);
+  }
+  requestAnimationFrame(tick);
+}
+draw(frames[0]);
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

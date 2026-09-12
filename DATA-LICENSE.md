@@ -33,6 +33,8 @@ Every derived file header should name MaleCNS, CC BY 4.0, and Berg et al., *Cell
 
 - A **20-neuron toy graph** (`flyciv-toy-20-v1`) authored here as a stand-in for tests and `flyciv smoke`.
   It is **not** MaleCNS. It is MIT like the rest of our code.
+- A **soma-location subsample** (`packages/flyciv/viz/fixtures/malecns_somas_viz.npz`) for the spectator
+  brain view: xyz + superclass only, CC BY 4.0, Berg et al. *Cell* 2026. Not meshes, not synapses.
 - Hash-check fixtures of a few dozen bytes for unit tests. Not connectome data.
 
 ## Do not mix FlyWire female data into the default path

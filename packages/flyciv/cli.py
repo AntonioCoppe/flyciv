@@ -122,7 +122,8 @@ def cmd_watch(args: argparse.Namespace) -> int:
     hud = out / "hud.html"
     print(format_report(report), end="")
     print(f"HUD: {hud.resolve()}  ({report.get('n_frames', 0)} frames)")
-    print("Play/pause in the browser. Roads and trainer are designed rules.")
+    print("Spectator: W world · B brain (soma cloud) · H neuroscope. Drag brain to orbit.")
+    print("Toy LIF spikes light 20 stand-in MaleCNS somata + a scripted halo. Roads/trainer are designed rules.")
     if hud.is_file() and not args.no_open:
         _open(hud)
     return 0

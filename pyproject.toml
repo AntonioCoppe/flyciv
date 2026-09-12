@@ -41,7 +41,7 @@ where = ["packages"]
 include = ["flyciv*"]
 
 [tool.setuptools.package-data]
-flyciv = ["brain/fixtures/*", "data/fixtures/*"]
+flyciv = ["brain/fixtures/*", "data/fixtures/*", "viz/fixtures/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

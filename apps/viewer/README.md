@@ -5,8 +5,13 @@ flyciv watch                 # run a short city and open the HUD in your browser
 flyciv view runs/watch       # ASCII snapshot; opens hud.html if present
 ```
 
-HUD layout: world on the left, one hero spike raster on the right, timeline at
-the bottom. Replay is the recorded sim, not a live pygame loop.
+Split-screen spectator (the X-clip layout, not Neuroglancer):
+
+- **W world** — isometric colony grid (Minecraft-without-Minecraft)
+- **B brain** — MaleCNS soma point cloud; toy-LIF spikes light 20 stand-in cells + a labeled halo. Drag to orbit.
+- **H neuroscope** — raster, a few named rates, 2×2 food “eye”
+
+Keys: `W` / `B` / `H` / space. Replay of a recorded run, read-only.
 
 `flyciv watch` paints the constructed city by default so there is something to
 see (roads + trainer tile). That city is a **designed rule**, labeled as such.

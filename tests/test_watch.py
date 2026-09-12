@@ -23,7 +23,8 @@ def test_capture_frame_has_map_and_agents():
     assert frame["agents"][0]["k"] == "c"
     assert frame["calories"] > 0
     assert frame["trainer"] is True
-    assert any(any(row) for row in frame["roads"])
+    assert frame["wear_b64"]
+    assert frame["mask_b64"]
 
 
 def test_watch_writes_hud(tmp_path: Path, capsys):
@@ -50,9 +51,12 @@ def test_watch_writes_hud(tmp_path: Path, capsys):
     )
     assert code == 0
     html = (out / "hud.html").read_text(encoding="utf-8")
-    assert "FLYCIV" in html
+    assert "FLYCIV SPECTATOR" in html
     assert "frames" in html
-    assert "<canvas" in html
+    assert 'id="brain"' in html
+    assert 'id="world"' in html
+    assert "neuroscope" in html
+    assert "xyz_b64" in html
     printed = capsys.readouterr().out
     assert "HUD:" in printed
     assert "frames" in printed

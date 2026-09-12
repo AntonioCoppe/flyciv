@@ -312,4 +312,14 @@ def _write_run(
     if frames:
         from flyciv.viz.hud import write_hud
 
-        write_hud(out_dir / "hud.html", frames, meta={"graph": report.get("graph"), "seed": report.get("seed")})
+        write_hud(
+            out_dir / "hud.html",
+            frames,
+            meta={
+                "graph": report.get("graph"),
+                "seed": report.get("seed"),
+                "generations": report.get("generations"),
+                "heroes": report.get("heroes"),
+                "crowd": report.get("crowd"),
+            },
+        )

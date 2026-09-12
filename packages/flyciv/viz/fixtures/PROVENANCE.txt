@@ -1,0 +1,8 @@
+malecns_somas_viz.npz
+Viz subsample of MaleCNS v1.0 somaLocation (no meshes, no synapses).
+Dataset: male-cns:v1.0
+License: CC BY 4.0
+Cite: Berg et al., Cell 189(18):5504-5526 (2026) doi:10.1016/j.cell.2026.08.015
+HHMI Janelia FlyEM + University of Cambridge + MRC LMB + Google Research
+Fetched via anonymous neuPrint Cypher, stratified by superclass.
+Not a connectome. Not EM. For the spectator brain view only.

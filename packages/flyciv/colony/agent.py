@@ -34,6 +34,8 @@ class Agent:
     last_action: int = LINGER
     last_outcome: str = ""
     spike_sketch: list[int] = field(default_factory=list)
+    rates: list[float] = field(default_factory=list)
+    eye: dict = field(default_factory=dict)
 
     def pos(self) -> tuple[int, int]:
         return self.y, self.x
@@ -107,8 +109,11 @@ def _hero_logits(agent: Agent, sensors: Sensors) -> np.ndarray:
         route = g.dopamine_routing[LOOM_OUT]
         i_ext[graph.index("ppl1_reward")] += 12.0 * float(route[0])
         i_ext[graph.index("ppl1_punish")] += 12.0 * float(route[1])
+    before = agent.brain.spike_count.copy()
     rates = agent.brain.run_ticks(i_ext)
-    agent.spike_sketch = [int(agent.brain.last_spikes[i]) for i in range(graph.n)]
+    fired = (agent.brain.spike_count - before) > 0
+    agent.spike_sketch = fired.astype(int).tolist()
+    agent.rates = [float(x) for x in rates]
     dn = [
         rates[graph.index("dn_walk")],
         rates[graph.index("dn_turn_left")],
@@ -222,6 +227,18 @@ def interact(agent: Agent, world: World) -> str:
 
 def step_agent(agent: Agent, world: World, others: list[Agent]) -> str:
     sensors = sense(agent, world, others)
+    agent.eye = {
+        "food": [
+            round(sensors.food_n, 3),
+            round(sensors.food_e, 3),
+            round(sensors.food_s, 3),
+            round(sensors.food_w, 3),
+            round(sensors.food_here, 3),
+        ],
+        "loom": round(sensors.loom, 3),
+        "wear": round(sensors.wear, 3),
+        "heading": int(agent.heading),
+    }
     action = decide(agent, sensors)
     body_program(agent, action, sensors, world, others)
     world.occupy(agent.y, agent.x)

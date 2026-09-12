@@ -64,6 +64,19 @@ fly-brain-minecraft or fly.ai source into this tree (see `NOTICE.md`).
 Genome schema: `flyciv.adapter.genome`. Lineage JSON under `runs/<id>/lineages/`
 (gitignored). This is the only evolving object.
 
+## Soma cloud (spectator brain view)
+
+| Field | Value |
+| --- | --- |
+| file | `packages/flyciv/viz/fixtures/malecns_somas_viz.npz` |
+| contents | bodyId, xyz, superclass — **somaLocation only** |
+| n | ~14.5k stratified subsample of neurons with a soma |
+| not included | meshes, EM, synapses, the 25M-edge graph |
+| license | CC BY 4.0 (MaleCNS derivative) |
+| cite | Berg et al., *Cell* 2026 |
+
+Fetched with anonymous neuPrint Cypher (fly-brain-minecraft pattern). Toy-LIF spikes are mapped onto 20 stand-in somata; extra dots that flash are a **scripted halo**, labeled in the HUD.
+
 ## Hashes in-repo
 
 Unit-test stub `packages/flyciv/data/fixtures/sha256-stub.txt`  

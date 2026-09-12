@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 from typing import Any
 
 import numpy as np
@@ -18,12 +19,8 @@ def _block_max(grid: np.ndarray, out: int) -> np.ndarray:
     return cropped.reshape(out, step, out, step).max(axis=(1, 3))
 
 
-def _down_max(grid: np.ndarray, out: int) -> list[list[float]]:
-    return _block_max(grid, out).astype(np.float64).tolist()
-
-
-def _down_any(grid: np.ndarray, out: int) -> list[list[int]]:
-    return _block_max(grid.astype(np.int8), out).astype(int).tolist()
+def _b64_u8(arr: np.ndarray) -> str:
+    return base64.b64encode(np.ascontiguousarray(arr, dtype=np.uint8).tobytes()).decode("ascii")
 
 
 def capture_frame(
@@ -35,11 +32,27 @@ def capture_frame(
     *,
     map_res: int = 64,
 ) -> dict[str, Any]:
-    """Compact frame for the HUD. Designed world layers, not emergence."""
+    """Compact frame: packed map + hero spikes/rates/eye."""
     res = min(map_res, world.size)
+    wear = _block_max(world.wear, res)
+    wear_u8 = np.clip(wear * (255.0 / 24.0), 0, 255).astype(np.uint8)
+    roads = _block_max(world.roads.astype(np.uint8), res) > 0
+    trails = _block_max(world.trails.astype(np.uint8), res) > 0
+    food = _block_max(world.food, res) > 0
+    brood = _block_max(world.brood_sites.astype(np.uint8), res) > 0
+    store = _block_max(world.store.astype(np.uint8), res) > 0
+    mask = (
+        roads.astype(np.uint8)
+        | (trails.astype(np.uint8) << 1)
+        | (food.astype(np.uint8) << 2)
+        | (brood.astype(np.uint8) << 3)
+        | (store.astype(np.uint8) << 4)
+    )
     hero = next((a for a in agents if a.kind is Kind.HERO), None)
     names = list(hero.brain.graph.names) if hero is not None and hero.brain is not None else []
     spikes = list(hero.spike_sketch) if hero is not None else []
+    rates = list(getattr(hero, "rates", []) or []) if hero is not None else []
+    eye = dict(getattr(hero, "eye", {}) or {}) if hero is not None else {}
     scale = world.size / res
     return {
         "generation": generation,
@@ -50,22 +63,21 @@ def capture_frame(
         "calories": float(world.nest_calories),
         "trainer": bool(world.trainer_alive),
         "unlocked": bool(world.trainer_unlocked),
-        "wear": _down_max(world.wear, res),
-        "roads": _down_any(world.roads, res),
-        "trails": _down_any(world.trails, res),
-        "food": _down_max(world.food, res),
-        "brood": _down_any(world.brood_sites, res),
-        "store": _down_any(world.store, res),
+        "wear_b64": _b64_u8(wear_u8),
+        "mask_b64": _b64_u8(mask.astype(np.uint8)),
         "agents": [
             {
                 "k": "H" if a.kind is Kind.HERO else "c",
-                "y": a.y / scale,
-                "x": a.x / scale,
+                "y": round(a.y / scale, 2),
+                "x": round(a.x / scale, 2),
+                "h": int(a.heading),
             }
             for a in agents
             if a.alive
         ],
         "spikes": spikes,
+        "rates": [round(float(x), 4) for x in rates],
         "names": names,
+        "eye": eye,
         "events": [e.as_dict() for e in events],
     }
