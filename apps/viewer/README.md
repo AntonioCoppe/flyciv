@@ -13,6 +13,7 @@ Split-screen spectator (the X-clip layout, not Neuroglancer):
 
 Keys: `W` / `B` / `H` / space. Replay of a recorded run, read-only.
 
-`flyciv watch` paints the constructed city by default so there is something to
-see (roads + trainer tile). That city is a **designed rule**, labeled as such.
-Use `--plain` for an unpainted random mill.
+`flyciv watch` defaults to 6 generations × 80 steps and paints the constructed
+city so the colony is visible. That city is a **designed rule**, labeled as such.
+Use `--plain` for an unpainted random mill. Playback is slow and does not loop
+unless you check **loop**.

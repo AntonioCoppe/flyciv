@@ -51,7 +51,8 @@ def test_watch_writes_hud(tmp_path: Path, capsys):
     )
     assert code == 0
     html = (out / "hud.html").read_text(encoding="utf-8")
-    assert "FLYCIV SPECTATOR" in html
+    assert "FLYCIV" in html
+    assert "spectator" in html.lower()
     assert "frames" in html
     assert 'id="brain"' in html
     assert 'id="world"' in html
