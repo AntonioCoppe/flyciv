@@ -36,6 +36,8 @@ class Agent:
     spike_sketch: list[int] = field(default_factory=list)
     rates: list[float] = field(default_factory=list)
     eye: dict = field(default_factory=dict)
+    is_child: bool = False
+    showcase_axis: int | None = None
 
     def pos(self) -> tuple[int, int]:
         return self.y, self.x
@@ -163,8 +165,39 @@ def _step_toward(agent: Agent, ty: int, tx: int, world: World) -> None:
             agent.heading = 3
 
 
+def _showcase_walk(agent: Agent, world: World) -> None:
+    """Video-only axial walk. Labeled showcase, not emergence."""
+    axis = 0 if agent.showcase_axis is None else int(agent.showcase_axis) % 4
+    arm = max(8, world.size // 6)
+    dist = abs(agent.y - world.nest_y) + abs(agent.x - world.nest_x)
+    if dist >= arm:
+        agent.heading = (axis + 2) % 4
+    elif dist == 0:
+        agent.heading = axis
+    dy, dx = HEADINGS[agent.heading]
+    ny, nx = agent.y + dy, agent.x + dx
+    if world.in_bounds(ny, nx):
+        agent.y, agent.x = ny, nx
+    agent.last_action = WALK
+
+
 def body_program(agent: Agent, action: int, sensors: Sensors, world: World, others: list[Agent]) -> None:
     """Scripted body programs (neurocraft split). HONESTY.md."""
+    if world.showcase and agent.kind is Kind.HERO:
+        _showcase_walk(agent, world)
+        return
+    if world.showcase and agent.kind is Kind.CROWD:
+        # Mill near the nest so 64 flies read as a crowd.
+        if abs(agent.y - world.nest_y) + abs(agent.x - world.nest_x) > 7:
+            _step_toward(agent, world.nest_y, world.nest_x, world)
+        else:
+            agent.heading = (agent.heading + (1 if action == TURN else 0)) % 4
+            dy, dx = HEADINGS[agent.heading]
+            ny, nx = agent.y + dy, agent.x + dx
+            if world.in_bounds(ny, nx):
+                agent.y, agent.x = ny, nx
+        agent.last_action = WALK
+        return
     # Return to nest when full — scripted.
     if agent.carried >= 2.0:
         _step_toward(agent, world.nest_y, world.nest_x, world)

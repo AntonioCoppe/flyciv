@@ -23,6 +23,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "pytest>=7.4",
+  "pillow>=10.0",
 ]
 fetch = [
   "requests>=2.31",

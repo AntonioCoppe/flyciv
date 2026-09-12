@@ -37,9 +37,11 @@ class World:
     trainer_cost: float = 2.0
     food_patches: list[tuple[int, int]] = field(default_factory=list)
     collapsed: bool = False
+    showcase: bool = False
+    wear_step: float = 1.0
 
     def occupy(self, y: int, x: int) -> None:
-        self.wear[y, x] += 1.0
+        self.wear[y, x] += self.wear_step
 
     def in_bounds(self, y: int, x: int) -> bool:
         return 0 <= y < self.size and 0 <= x < self.size
@@ -90,6 +92,26 @@ def make_world(
         return world
     if layout == "constructed-win":
         paint_civilization(world)
+        return world
+    if layout == "showcase":
+        # Labeled video choreography: 4 foods on the axes so wear can become a cross.
+        arm = max(10, size // 6)
+        patches = [
+            (max(1, ny - arm), nx),
+            (ny, min(size - 2, nx + arm)),
+            (min(size - 2, ny + arm), nx),
+            (ny, max(1, nx - arm)),
+        ]
+        for fy, fx in patches:
+            world.food[fy, fx] = FOOD_MAX
+        world.food_patches = patches
+        for dy, dx in ((0, 1), (1, 0), (0, -1), (-1, 0)):
+            by, bx = ny + dy, nx + dx
+            if world.in_bounds(by, bx):
+                world.brood[by, bx] = 3
+                world.brood_sites[by, bx] = True
+        world.showcase = True
+        world.wear_step = 8.0
         return world
 
     n_patches = 8 if size >= 32 else max(2, size // 8)

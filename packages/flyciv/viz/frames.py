@@ -67,7 +67,7 @@ def capture_frame(
         "mask_b64": _b64_u8(mask.astype(np.uint8)),
         "agents": [
             {
-                "k": "H" if a.kind is Kind.HERO else "c",
+                "k": ("C" if getattr(a, "is_child", False) else "H" if a.kind is Kind.HERO else "c"),
                 "y": round(a.y / scale, 2),
                 "x": round(a.x / scale, 2),
                 "h": int(a.heading),
@@ -79,5 +79,7 @@ def capture_frame(
         "rates": [round(float(x), 4) for x in rates],
         "names": names,
         "eye": eye,
+        "ate": bool(hero is not None and hero.last_outcome == "ate"),
+        "n_child": int(sum(1 for a in agents if getattr(a, "is_child", False))),
         "events": [e.as_dict() for e in events],
     }

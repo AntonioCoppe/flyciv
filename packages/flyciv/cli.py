@@ -106,8 +106,23 @@ def _open(path: Path) -> None:
         subprocess.run(["open", str(path)], check=False)
 
 
+def cmd_cinema(args: argparse.Namespace) -> int:
+    from flyciv.viz.cinema import render_clip
+
+    src = Path(args.src)
+    if not src.is_file():
+        print(f"missing {src}; run: flyciv watch --no-open", file=sys.stderr)
+        return 1
+    wide, tall = render_clip(src, Path(args.out), seconds=float(args.seconds))
+    print(f"wrote {wide}")
+    print(f"wrote {tall}")
+    print("showcase clip — overcranked wear, axial hero walks, labeled as such")
+    return 0
+
+
 def cmd_watch(args: argparse.Namespace) -> int:
     out = Path(args.out) if args.out else Path("runs") / "watch"
+    showcase = not bool(args.honest)
     report = run_colony(
         seed=int(args.seed),
         n_heroes=int(args.heroes),
@@ -115,17 +130,29 @@ def cmd_watch(args: argparse.Namespace) -> int:
         n_generations=int(args.generations),
         steps_per_gen=int(args.steps),
         world_size=int(args.size),
-        construct_win=not bool(args.plain),
+        construct_win=bool(args.plain) and not showcase,
+        showcase=showcase,
         out_dir=out,
         collect_frames=True,
     )
     hud = out / "hud.html"
+    q = []
+    if args.lab:
+        q.append("lab=1")
+    if args.cinema:
+        q.append("cinema=1")
+    url = hud.resolve().as_uri()
+    if q:
+        url = url + "?" + "&".join(q)
     print(format_report(report), end="")
     print(f"HUD: {hud.resolve()}  ({report.get('n_frames', 0)} frames)")
-    print("Spectator: W world · B brain (soma cloud) · H neuroscope. Drag brain to orbit.")
-    print("Toy LIF spikes light 20 stand-in MaleCNS somata + a scripted halo. Roads/trainer are designed rules.")
+    print("Watch skin is default. Lab: hud.html?lab=1  Cinema: hud.html?cinema=1")
+    print("Showcase overcranks wear and walks 4 heroes on axes (labeled). Use --honest for the science run.")
     if hud.is_file() and not args.no_open:
-        _open(hud)
+        if q:
+            webbrowser.open(url)
+        else:
+            _open(hud)
     return 0
 
 
@@ -177,12 +204,21 @@ def build_parser() -> argparse.ArgumentParser:
     w.add_argument("--crowd", type=int, default=64)
     w.add_argument("--generations", type=int, default=6)
     w.add_argument("--seed", type=int, default=7)
-    w.add_argument("--steps", type=int, default=80)
-    w.add_argument("--size", type=int, default=128)
+    w.add_argument("--steps", type=int, default=36)
+    w.add_argument("--size", type=int, default=64)
     w.add_argument("--out", type=str, default="")
-    w.add_argument("--plain", action="store_true", help="do not paint the constructed city (random mill)")
+    w.add_argument("--plain", action="store_true", help="legacy: painted city (not used with showcase)")
+    w.add_argument("--honest", action="store_true", help="science run: no axial choreography, no wear overcrank")
+    w.add_argument("--lab", action="store_true", help="open the lab skin instead of Watch")
+    w.add_argument("--cinema", action="store_true", help="12s title cards for the X clip")
     w.add_argument("--no-open", action="store_true")
     w.set_defaults(func=cmd_watch)
+
+    c = sub.add_parser("cinema", help="render the 13s Watch clip (16:9 + 9:16) from a showcase run")
+    c.add_argument("--from", dest="src", default="runs/watch/watch.json")
+    c.add_argument("--out", default="runs/cinema")
+    c.add_argument("--seconds", type=float, default=13.5)
+    c.set_defaults(func=cmd_cinema)
 
     return p
 

@@ -88,6 +88,7 @@ def run_colony(
     world_size: int = 128,
     layout: str = "default",
     construct_win: bool = False,
+    showcase: bool = False,
     initial_genomes: list[Genome] | None = None,
     graph: ConnectomeGraph | None = None,
     out_dir: Path | None = None,
@@ -100,6 +101,9 @@ def run_colony(
     if construct_win:
         layout = "constructed-win"
         n_generations = max(n_generations, 2)
+    if showcase:
+        layout = "showcase"
+        construct_win = False
     world = make_world(world_size, rng, layout=layout)
     if construct_win:
         paint_civilization(world)
@@ -125,8 +129,13 @@ def run_colony(
         agents: list[Agent] = []
         jitter = 2 if world_size < 32 else 4
         for i in range(n_heroes):
-            y, x, h = _place(world, rng, jitter)
-            agents.append(make_hero(y, x, h, gs[i], graph, agent_id=_new_id("hero", i)))
+            if showcase:
+                y, x, h = world.nest_y, world.nest_x, i % 4
+            else:
+                y, x, h = _place(world, rng, jitter)
+            hero = make_hero(y, x, h, gs[i], graph, agent_id=_new_id("hero", i))
+            hero.showcase_axis = i % 4
+            agents.append(hero)
         for j in range(n_crowd):
             y, x, h = _place(world, rng, jitter)
             idx = n_heroes + j
@@ -184,7 +193,7 @@ def run_colony(
                     emit("first_store", gen, t)
                     gen_event_names.append("first_store")
             respawn_food(world)
-            decay_wear(world)
+            decay_wear(world, amount=0.0 if showcase else 0.01)
             occupied = {a.pos() for a in agents if a.alive}
             flags = refresh_world_layers(world, occupied)
             if flags["first_trail"]:
@@ -200,6 +209,8 @@ def run_colony(
         stab = trail_stability(prev_trails, world.trails)
         prev_trails = world.trails.copy()
 
+        if showcase and gen >= 3 and not world.trainer_unlocked:
+            world.nest_calories = max(world.nest_calories, SURPLUS_THRESHOLD)
         if world.nest_calories >= SURPLUS_THRESHOLD and not world.trainer_unlocked:
             world.trainer_unlocked = True
             world.trainer_alive = True
@@ -220,6 +231,8 @@ def run_colony(
                 if crowd:
                     worst = min(crowd, key=lambda a: a.calories_eaten)
                     worst.genome = child
+                    worst.is_child = True
+                    worst.y, worst.x = world.nest_y, world.nest_x
                 emit("trainer_child", gen, steps_per_gen)
                 gen_event_names.append("trainer_child")
 
@@ -246,7 +259,14 @@ def run_colony(
                     g.lineage_id = _new_id("lin", next_lin)
                     next_lin += 1
             # keep a good forager prior only on generation 1 spawn; after that, selection speaks
-            agents = spawn(genomes)
+            if showcase:
+                # Keep bodies on the map so the city does not teleport each generation.
+                for a, g in zip(agents, genomes):
+                    a.genome = g
+                    if a.brain is not None:
+                        a.brain.reset()
+            else:
+                agents = spawn(genomes)
             if construct_win:
                 world.nest_calories = max(world.nest_calories, 40.0)
                 world.trainer_alive = True
@@ -264,6 +284,7 @@ def run_colony(
         "world_size": world_size,
         "layout": layout,
         "construct_win": construct_win,
+        "showcase": showcase,
         "smoke": smoke,
         "nest_calories": history[-1]["nest_calories"] if history else 0.0,
         "calories_eaten": history[-1]["calories_eaten"] if history else 0.0,

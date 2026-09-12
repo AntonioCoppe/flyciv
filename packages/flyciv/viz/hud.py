@@ -15,6 +15,8 @@ def write_hud(path: Path, frames: list[dict[str, Any]], meta: dict[str, Any] | N
         payload_meta["cloud"] = spectator_cloud()
     payload = {"meta": payload_meta, "frames": frames}
     tmpl = files("flyciv.viz.fixtures").joinpath("spectator.html").read_text(encoding="utf-8")
-    html = tmpl.replace("__FRAMES__", json.dumps(payload, separators=(",", ":")))
+    blob = json.dumps(payload, separators=(",", ":"))
+    html = tmpl.replace("__FRAMES__", blob)
     path.write_text(html, encoding="utf-8")
+    path.with_name("watch.json").write_text(blob, encoding="utf-8")
     return path
